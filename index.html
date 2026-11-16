@@ -6,29 +6,18 @@
 <style>
 /* Layout: one fixed screen. Top bar, prompt, a stage that flexes to fill, feedback and buttons. Nothing scrolls. */
 :root {
-  --bg: #E9EDE8; --surface: #F7F9F6; --field: #FFFFFF; --ink: #1C2421; --muted: #56625C; --line: #C3CCC4;
-  --accent: #A8561C; --accent-ink: #FFFFFF; --accent-soft: #F3E2D3;
-  --good: #23784A; --good-soft: #DDF0E3; --bad: #B0362B; --bad-soft: #F8E1DD; --focus: #1F6FB2;
-  --creature: #3B4A44; --star: #C98A12;
-  --hl: #FFF0B8;
+  /* Excavated stone and ancient pigments: limestone ground, chalk cards, basalt ink, lapis, malachite, carnelian, ochre gold. Light only. */
+  --bg: #D5D8D2; --surface: #E9EBE6; --field: #F6F7F4; --ink: #1E2223; --muted: #565D5C; --line: #A3AAA6;
+  --accent: #2A4B7C; --accent-ink: #F3F6FA; --accent-soft: #D2DBE9;
+  --good: #2D6A49; --good-soft: #D2E5D8; --bad: #A2361E; --bad-soft: #F1D7CE; --focus: #A2361E;
+  --creature: #24292B; --star: #B3820F; --hl: #EFE2A8; --strata: rgba(40, 52, 50, .07);
   --display: "Atkinson Hyperlegible", Verdana, "Segoe UI", system-ui, sans-serif;
   --body: "Atkinson Hyperlegible", Verdana, "Segoe UI", system-ui, sans-serif;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #141A17; --surface: #1C2420; --field: #111714; --ink: #E4EAE5; --muted: #9AA8A0; --line: #34413A;
-    --accent: #E08B45; --accent-ink: #1A0F06; --accent-soft: #3A2716; --good: #5FC88B; --good-soft: #17301F;
-    --bad: #F0826F; --bad-soft: #3A1C17; --focus: #6AB0F0; --creature: #C5D1CA; --star: #F0B84A; --hl: #3D3612; color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --bg: #141A17; --surface: #1C2420; --field: #111714; --ink: #E4EAE5; --muted: #9AA8A0; --line: #34413A;
-  --accent: #E08B45; --accent-ink: #1A0F06; --accent-soft: #3A2716; --good: #5FC88B; --good-soft: #17301F;
-  --bad: #F0826F; --bad-soft: #3A1C17; --focus: #6AB0F0; --creature: #C5D1CA; --star: #F0B84A; --hl: #3D3612; color-scheme: dark;
+  color-scheme: light;
 }
 * { box-sizing: border-box; }
 html, body { height: 100%; }
-body { background: var(--bg); color: var(--ink); font: 15px/1.4 var(--body); margin: 0; overflow: hidden; overscroll-behavior: none;
+body { background: var(--bg) repeating-linear-gradient(180deg, transparent 0 46px, var(--strata) 46px 48px, transparent 48px 75px, var(--strata) 75px 76px); color: var(--ink); font: 15px/1.4 var(--body); margin: 0; overflow: hidden; overscroll-behavior: none;
   padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 8px; }
 button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
 button:focus-visible, [tabindex]:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
@@ -60,13 +49,25 @@ button:focus-visible, [tabindex]:focus-visible { outline: 3px solid var(--focus)
 .lvl .stars { font-size: clamp(11px, 3vw, 14px); }
 .lvl.next { border-color: var(--accent); background: var(--accent-soft); }
 .lvl:disabled { opacity: .5; cursor: default; background: transparent; border-style: dashed; }
+.world { position: relative; overflow: hidden; }
+.crownwrap { position: absolute; inset: 0; z-index: 3; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 8px 0; background: color-mix(in srgb, var(--surface) 72%, transparent); }
+.rain { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.rain svg { position: absolute; top: 0; width: var(--sz); height: auto; opacity: .85; animation: fall var(--dur) linear var(--delay) infinite; }
+@keyframes fall { from { transform: translateY(-40px) rotate(0deg); } to { transform: translateY(var(--fall)) rotate(var(--rot)); } }
+.bigcrown { position: relative; z-index: 2; flex: 0 1 130px; min-height: 28px; max-width: 80%; aspect-ratio: 10 / 7; transition: transform .28s cubic-bezier(.2, .8, .3, 1.2); touch-action: none; }
+.bigcrown svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 4px 6px rgba(60, 40, 15, .35)); }
+.bigcrown.spin svg { animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.crownwrap .btn { position: relative; z-index: 2; padding: 4px 12px; font-size: 13px; }
+.crownwrap .crowned-note { position: relative; z-index: 2; font: 700 13px var(--display); color: var(--creature); }
+@media (prefers-reduced-motion: reduce) { .rain svg { animation: none; top: var(--still); } .bigcrown.spin svg { animation: none; } }
 .homefoot { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 13px; }
 .homefoot .btn { padding: 3px 9px; font-size: 13px; }
 @media (min-aspect-ratio: 5/4) { .worlds { grid-template-columns: 1fr 1fr; grid-template-rows: repeat(2, minmax(0, 1fr)); } }
 
 /* play */
 .play { height: 100%; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; gap: 8px; }
-.prompt { margin: 0; font-size: clamp(14px, 3.9vw, 16px); line-height: 1.3; }
+.prompt { margin: 0 auto; max-width: 62ch; text-align: center; text-wrap: balance; font-size: clamp(14px, 3.9vw, 16px); line-height: 1.3; }
 .prompt b { font-family: var(--display); font-weight: 700; }
 .stage { min-height: 0; min-width: 0; display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr); }
 .foot { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; min-height: 54px; }
@@ -439,6 +440,32 @@ function hideOv() { ov.hidden = true; ov.innerHTML = ''; }
 
 /* ---------- home ---------- */
 function unlocked(w, mi) { return mi === 0 || (S.stars[w.id + '-' + MODES[mi - 1][0]] || 0) >= 1; }
+var CROWN = '<path d="M8,58 L4,18 L26,36 L50,6 L74,36 L96,18 L92,58 Z" fill="var(--star)" stroke="var(--creature)" stroke-width="3" stroke-linejoin="round"/><rect x="8" y="56" width="84" height="11" fill="var(--star)" stroke="var(--creature)" stroke-width="3"/><circle cx="4" cy="17" r="4.5" fill="var(--star)" stroke="var(--creature)" stroke-width="2.5"/><circle cx="50" cy="6" r="5" fill="var(--star)" stroke="var(--creature)" stroke-width="2.5"/><circle cx="96" cy="17" r="4.5" fill="var(--star)" stroke="var(--creature)" stroke-width="2.5"/><circle cx="30" cy="61.5" r="3.6" fill="var(--accent)"/><circle cx="50" cy="61.5" r="3.6" fill="var(--good)"/><circle cx="70" cy="61.5" r="3.6" fill="var(--accent)"/><path d="M50,24 L57,38 L50,48 L43,38 Z" fill="var(--accent)" stroke="var(--creature)" stroke-width="2"/>';
+function crownSVG() { return '<svg viewBox="-2 -2 104 72" aria-hidden="true">' + CROWN + '</svg>'; }
+function worldDone(w) { return MODES.every(function (m) { return (S.stars[w.id + '-' + m[0]] || 0) >= 3; }); }
+function wireCrown(sec, w) {
+  var wrap = sec.querySelector('.crownwrap'), rain = wrap.querySelector('.rain'), crown = wrap.querySelector('.bigcrown'), H = sec.clientHeight, r = Math.random, h = '';
+  for (var i = 0; i < 16; i++) h += '<svg viewBox="-2 -2 104 72" style="left:' + (r() * 96).toFixed(1) + '%;--sz:' + Math.round(14 + r() * 16) + 'px;--dur:' + (3 + r() * 3).toFixed(2) + 's;--delay:-' + (r() * 6).toFixed(2) + 's;--fall:' + (H + 50) + 'px;--rot:' + Math.round(r() * 720 - 360) + 'deg;--still:' + Math.round(r() * (H - 20)) + 'px">' + CROWN + '</svg>';
+  rain.innerHTML = h;
+  var ox = 0, oy = 0, spinT;
+  function flee(e) {
+    var b = sec.getBoundingClientRect(), c = crown.getBoundingClientRect(), cx = c.left + c.width / 2, cy = c.top + c.height / 2, dx = cx - e.clientX, dy = cy - e.clientY, d = Math.hypot(dx, dy), R = Math.max(c.width, c.height) * 0.75 + 12;
+    if (d >= R) return;
+    if (d < 1) { dx = r() - 0.5; dy = r() - 0.5; d = Math.hypot(dx, dy); }
+    ox += dx / d * (R - d + 14); oy += dy / d * (R - d + 14);
+    var hw = (b.width - c.width) / 2 - 4, hh = (b.height - c.height) / 2 - 4;
+    if (Math.abs(ox) > hw) ox = -Math.sign(ox) * hw * 0.6;
+    if (Math.abs(oy) > hh) oy = -Math.sign(oy) * hh * 0.6;
+    crown.style.transform = 'translate(' + ox.toFixed(1) + 'px,' + oy.toFixed(1) + 'px)';
+    crown.classList.add('spin'); clearTimeout(spinT); spinT = setTimeout(function () { crown.classList.remove('spin'); }, 900);
+  }
+  sec.addEventListener('pointermove', flee); sec.addEventListener('pointerdown', flee);
+  var rb = wrap.querySelector('.btn'), armed = false;
+  rb.addEventListener('click', function () {
+    if (!armed) { armed = true; rb.textContent = 'Tap again to clear ' + w.name + ' stars'; return; }
+    MODES.forEach(function (m) { delete S.stars[w.id + '-' + m[0]]; delete S.plays[w.id + '-' + m[0]]; }); save(); home();
+  });
+}
 function home() {
   L = null; hideOv(); drawBar();
   var h = '<div class="home"><p class="rule"><b>The rule:</b> creatures that share more body features share a more recent common ancestor. Earn a star to unlock the next level.</p><div class="worlds">';
@@ -449,10 +476,11 @@ function home() {
       var id = w.id + '-' + m[0], st = S.stars[id] || 0, open = unlocked(w, mi), nx = open && !st && !nextSet; if (nx) nextSet = true;
       h += '<button type="button" class="lvl' + (nx ? ' next' : '') + '" data-w="' + wi + '" data-m="' + mi + '"' + (open ? '' : ' disabled') + ' aria-label="' + w.name + ', ' + m[1] + (open ? ', ' + st + ' of 3 stars' : ', locked') + '"><b>' + m[1] + '</b>' + (open ? starStr(st) : '<span class="stars"><i>locked</i></span>') + '</button>';
     });
-    h += '</div></section>';
+    h += '</div>' + (worldDone(w) ? '<div class="crownwrap" role="group" aria-label="' + w.name + ' complete with all 15 stars"><div class="rain"></div><div class="bigcrown">' + crownSVG() + '</div><button type="button" class="btn">Reset this section</button></div>' : '') + '</section>';
   });
   h += '</div><div class="homefoot"><span>Spot → Compare → Build → Read → Mystery</span><button type="button" class="btn" id="bReset">Reset progress</button></div></div>';
   view.innerHTML = h;
+  Array.prototype.forEach.call(view.querySelectorAll('.world'), function (sec, i) { if (sec.querySelector('.crownwrap')) wireCrown(sec, WORLDS[i]); });
   var rb = $('#bReset'), armed = false;
   rb.addEventListener('click', function () { if (!armed) { armed = true; rb.textContent = 'Tap again to erase stars'; return; } S.stars = {}; S.best = {}; S.plays = {}; save(); home(); });
 }
