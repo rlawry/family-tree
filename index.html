@@ -1,0 +1,702 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Family Tree Challenge</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap">
+<style>
+/* Layout: one fixed screen. Top bar, prompt, a stage that flexes to fill, feedback and buttons. Nothing scrolls. */
+:root {
+  --bg: #E9EDE8; --surface: #F7F9F6; --field: #FFFFFF; --ink: #1C2421; --muted: #56625C; --line: #C3CCC4;
+  --accent: #A8561C; --accent-ink: #FFFFFF; --accent-soft: #F3E2D3;
+  --good: #23784A; --good-soft: #DDF0E3; --bad: #B0362B; --bad-soft: #F8E1DD; --focus: #1F6FB2;
+  --creature: #3B4A44; --star: #C98A12;
+  --hl: #FFF0B8;
+  --display: "Atkinson Hyperlegible", Verdana, "Segoe UI", system-ui, sans-serif;
+  --body: "Atkinson Hyperlegible", Verdana, "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141A17; --surface: #1C2420; --field: #111714; --ink: #E4EAE5; --muted: #9AA8A0; --line: #34413A;
+    --accent: #E08B45; --accent-ink: #1A0F06; --accent-soft: #3A2716; --good: #5FC88B; --good-soft: #17301F;
+    --bad: #F0826F; --bad-soft: #3A1C17; --focus: #6AB0F0; --creature: #C5D1CA; --star: #F0B84A; --hl: #3D3612; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141A17; --surface: #1C2420; --field: #111714; --ink: #E4EAE5; --muted: #9AA8A0; --line: #34413A;
+  --accent: #E08B45; --accent-ink: #1A0F06; --accent-soft: #3A2716; --good: #5FC88B; --good-soft: #17301F;
+  --bad: #F0826F; --bad-soft: #3A1C17; --focus: #6AB0F0; --creature: #C5D1CA; --star: #F0B84A; --hl: #3D3612; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.4 var(--body); margin: 0; overflow: hidden; overscroll-behavior: none;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 8px; }
+button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+button:focus-visible, [tabindex]:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+#app { height: 100%; max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); gap: 8px; }
+
+/* top bar */
+#bar { display: flex; align-items: center; gap: 8px; min-height: 36px; }
+#bar h1 { font: 700 clamp(16px, 4.4vw, 21px)/1.1 var(--display); margin: 0; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#bar h1 small { font: 600 13px var(--body); color: var(--muted); margin-left: 6px; }
+.btn { border: 2px solid var(--line); background: var(--surface); border-radius: 0; padding: 6px 12px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.btn.pri { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn:disabled { opacity: .45; cursor: default; }
+.count { font-weight: 700; font-variant-numeric: tabular-nums; color: var(--muted); white-space: nowrap; }
+.stars { color: var(--star); letter-spacing: 1px; white-space: nowrap; }
+.stars i { font-style: normal; color: var(--line); }
+
+/* home */
+.home { height: 100%; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; gap: 8px; }
+.rule { margin: 0; color: var(--muted); font-size: 14px; }
+.rule b { color: var(--ink); }
+.worlds { display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr); grid-template-rows: repeat(4, minmax(0, 1fr)); min-height: 0; }
+.world { background: var(--surface); border: 1px solid var(--line); border-radius: 0; padding: 8px 10px; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 6px; min-height: 0; }
+.world h2 { font: 700 16px/1.1 var(--display); margin: 0; display: flex; align-items: center; gap: 8px; }
+.world h2 .ic { width: 40px; height: 24px; flex: none; }
+.world h2 small { font: 400 13px var(--body); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.lvls { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; min-height: 0; }
+.lvl { border: 2px solid var(--line); background: var(--field); border-radius: 0; padding: 2px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; min-height: 0; overflow: hidden; }
+.lvl b { font: 700 clamp(11px, 3.1vw, 14px)/1.1 var(--display); }
+.lvl .stars { font-size: clamp(11px, 3vw, 14px); }
+.lvl.next { border-color: var(--accent); background: var(--accent-soft); }
+.lvl:disabled { opacity: .5; cursor: default; background: transparent; border-style: dashed; }
+.homefoot { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 13px; }
+.homefoot .btn { padding: 3px 9px; font-size: 13px; }
+@media (min-aspect-ratio: 5/4) { .worlds { grid-template-columns: 1fr 1fr; grid-template-rows: repeat(2, minmax(0, 1fr)); } }
+
+/* play */
+.play { height: 100%; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; gap: 8px; }
+.prompt { margin: 0; font-size: clamp(14px, 3.9vw, 16px); line-height: 1.3; }
+.prompt b { font-family: var(--display); font-weight: 700; }
+.stage { min-height: 0; min-width: 0; display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr); }
+.foot { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; min-height: 54px; }
+.fb { font-size: clamp(12.5px, 3.5vw, 14.5px); line-height: 1.3; margin: 0; min-width: 0; }
+.fb.good b:first-child { color: var(--good); } .fb.bad b:first-child { color: var(--bad); }
+.acts { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; max-width: 46vw; }
+.acts .num { min-width: 34px; padding: 6px 0; text-align: center; }
+
+.ic { fill: currentColor; color: var(--creature); display: block; }
+.ic .e { fill: var(--field); stroke: none; }
+.chips { display: flex; flex-wrap: wrap; gap: 3px 4px; align-content: flex-start; min-width: 0; }
+.chip { font-size: clamp(11px, 3vw, 12.5px); line-height: 1.2; padding: 2px 7px; border-radius: 0; border: 1px solid var(--line); background: var(--field); white-space: nowrap; }
+.chip.hit { background: var(--good-soft); border-color: var(--good); font-weight: 700; }
+.chip.no { border-style: dashed; color: var(--muted); }
+.chip.x { background: var(--accent-soft); border-color: var(--accent); }
+
+/* spot */
+.cards { display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr); grid-template-rows: repeat(3, minmax(0, 1fr)); min-height: 0; }
+.card { text-align: left; background: var(--surface); border: 2px solid var(--line); border-radius: 0; padding: 8px 10px; cursor: pointer; display: grid; grid-template-columns: clamp(64px, 22vw, 110px) minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); column-gap: 10px; row-gap: 4px; min-height: 0; overflow: hidden; }
+.card .ic { grid-row: 1 / 3; width: 100%; height: 100%; max-height: 90px; align-self: center; }
+.card .cn { font: 700 18px/1.1 var(--display); align-self: center; }
+.card:not(:has(.chips)) { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); align-items: center; }
+.card:not(:has(.chips)) .ic { grid-row: auto; max-height: 100%; }
+.card:not(:has(.chips)) .cn { font-size: clamp(18px, 5vw, 24px); }
+.card.sel { border-color: var(--accent); background: var(--accent-soft); }
+.card.good { border-color: var(--good); background: var(--good-soft); }
+.card.bad { border-color: var(--bad); background: var(--bad-soft); }
+.card:disabled { cursor: default; color: inherit; }
+@media (min-aspect-ratio: 5/4) {
+  .cards { grid-template-rows: minmax(0, 1fr); grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .card { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto auto; justify-items: center; text-align: center; }
+  .card .ic { grid-row: auto; max-height: 150px; }
+  .card .chips { justify-content: center; }
+}
+
+/* evidence table */
+.tbl { display: grid; grid-template-columns: minmax(96px, 1.5fr) repeat(5, minmax(0, 1fr)); min-height: 0; height: 100%; border: 1px solid var(--line); border-radius: 0; overflow: hidden; background: var(--field); }
+.tbl > * { border: 0; border-bottom: 1px solid var(--line); background: transparent; padding: 0 6px; display: flex; align-items: center; min-height: 0; min-width: 0; margin: 0; border-radius: 0; text-align: left; }
+.tbl .th { flex-direction: column; justify-content: center; padding: 3px 2px; font: 700 clamp(9.5px, 2.6vw, 12.5px)/1.1 var(--body); background: var(--surface); text-align: center; hyphens: manual; }
+.tbl .th .ic { width: 100%; max-width: 62px; height: clamp(18px, 6vw, 34px); }
+.tbl .th.corner { align-items: flex-start; padding-left: 8px; color: var(--muted); }
+.tbl .rl { font-size: clamp(11.5px, 3.2vw, 14px); font-weight: 600; line-height: 1.1; }
+.tbl .c { justify-content: center; font-size: 15px; color: var(--muted); }
+.tbl .c.y { color: var(--ink); }
+.tbl .c.y::before { content: ""; width: 12px; height: 12px; border-radius: 0; background: currentColor; }
+.tbl .c.n::before { content: "–"; opacity: .5; }
+.tbl button { cursor: pointer; }
+.tbl button.rl::after, .tbl button.th::after { content: ""; }
+.tbl button.rl { text-decoration: underline dotted; text-underline-offset: 3px; }
+.tbl button.th { outline: 2px dashed var(--accent); outline-offset: -4px; border-radius: 0; }
+.tbl .foc { background: var(--accent-soft); }
+.tbl.sp { grid-template-columns: minmax(92px, 1.25fr) repeat(3, minmax(0, 1fr)); }
+.tbl.sp .th { gap: 2px; font-size: clamp(12.5px, 3.6vw, 16px); hyphens: manual; overflow-wrap: anywhere; }
+.tbl.sp .th .ic { max-width: 112px; height: clamp(30px, 8.5vh, 72px); }
+.tbl.sp .th.sel { background: var(--accent-soft); outline: 3px solid var(--accent); }
+.tbl.sp .c.sel { background: var(--accent-soft); }
+.tbl .hl { background: var(--hl); }
+@keyframes rv { from { opacity: 0; } to { opacity: 1; } }
+.tbl .rv { opacity: 0; animation: rv .5s ease-out forwards; }
+.tbl.sp.locked .th { opacity: .6; outline-color: var(--line); cursor: default; }
+.tbl.sp.locked .rl { text-decoration: none; cursor: default; }
+.tbl .rl.lg { color: var(--good); font-size: clamp(13.5px, 3.9vw, 17px); font-weight: 700; }
+.tbl .rl.lb { color: var(--bad); text-decoration: line-through; }
+.tbl .c.y.tick::before { content: "\2713"; width: 1.55em; height: 1.55em; background: var(--good-soft); border: 2px solid var(--good); color: var(--good); display: grid; place-items: center; font: 700 clamp(13px, 3.6vw, 17px)/1 var(--body); }
+.stage { position: relative; }
+.play:has(.st-compare) { grid-template-rows: auto minmax(0, 1fr); }
+.play:has(.st-compare) .foot { display: none; }
+.float { position: absolute; z-index: 5; left: 50%; background: var(--surface); border: 3px solid var(--accent); box-shadow: 0 10px 30px rgba(0, 0, 0, .28); }
+.pad { top: 50%; transform: translate(-50%, -50%); width: min(92%, 340px); padding: 14px; display: grid; gap: 10px; text-align: center; }
+.pad p, .pop p { margin: 0; font-size: clamp(14px, 3.9vw, 16px); }
+.pad .nums { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.pad .num { height: 54px; font: 700 24px var(--body); border: 2px solid var(--accent); background: var(--field); cursor: pointer; }
+.pop { top: 50%; transform: translate(-50%, -50%); width: min(92%, 460px); padding: 14px; display: grid; gap: 10px; }
+.pop.good { border-color: var(--good); } .pop.bad { border-color: var(--bad); }
+.pop .row, .pad .row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.float.dock { bottom: 10px; transform: translateX(-50%); padding: 6px; display: flex; gap: 6px; align-items: center; white-space: nowrap; }
+.float.dock.good { border-color: var(--good); } .float.dock.bad { border-color: var(--bad); }
+.float.dock .vb { font-weight: 700; padding: 0 6px; }
+.float.dock.good .vb { color: var(--good); } .float.dock.bad .vb { color: var(--bad); }
+.pop.good b:first-child { color: var(--good); } .pop.bad b:first-child { color: var(--bad); }
+@keyframes pulse { 0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 var(--accent); } 50% { transform: scale(1.08); box-shadow: 0 0 0 6px transparent; } }
+@media (prefers-reduced-motion: no-preference) { .pulse { animation: pulse 1.3s ease-in-out infinite; } }
+@media (prefers-reduced-motion: reduce) { .pulse { outline: 3px solid var(--accent); outline-offset: 2px; } }
+.tbl.sp .th.good { background: var(--good-soft); outline: 3px solid var(--good); }
+.tbl.sp .th.bad { background: var(--bad-soft); outline: 3px solid var(--bad); }
+.tbl.sp .c.y::before { width: 14px; height: 14px; }
+.tbl .good { background: var(--good-soft); } .tbl .bad { background: var(--bad-soft); }
+
+/* tree */
+.treebox { min-height: 0; min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 0; padding: 4px; }
+svg.tree { width: 100%; height: 100%; display: block; }
+.tree .br { stroke: var(--creature); stroke-width: 4; stroke-linecap: round; fill: none; }
+.tree .jn { fill: var(--creature); }
+.tree text { font-family: var(--body); fill: var(--ink); }
+.tree .tn { font-weight: 700; text-anchor: middle; }
+.tree .tb { fill: transparent; stroke: transparent; stroke-width: 2; }
+.tree [data-tip], .tree [data-mark], .tree [data-node], .tree [data-dot] { cursor: pointer; }
+.tree .slot .tb { fill: var(--field); stroke: var(--line); stroke-dasharray: 5 4; }
+.tree .filled .tb { stroke-dasharray: none; }
+.tree .opt .tb { stroke: var(--accent); stroke-dasharray: 5 4; fill: var(--field); }
+.tree .foc .tb { fill: var(--accent-soft); stroke: var(--accent); }
+.tree .sel .tb { fill: var(--accent-soft); stroke: var(--accent); stroke-dasharray: none; }
+.tree .good .tb { fill: var(--good-soft); stroke: var(--good); stroke-dasharray: none; }
+.tree .bad .tb { fill: var(--bad-soft); stroke: var(--bad); stroke-dasharray: none; }
+.tree .pill rect { fill: var(--field); stroke: var(--creature); stroke-width: 1.5; }
+.tree .pill text { font-weight: 700; text-anchor: middle; }
+.tree .pill.slot rect { stroke: var(--accent); stroke-dasharray: 5 4; stroke-width: 2; }
+.tree .pill.filled rect { stroke-dasharray: none; }
+.tree .pill.bad rect { fill: var(--bad-soft); stroke: var(--bad); }
+.tree .pill.good rect { fill: var(--good-soft); stroke: var(--good); }
+.tree .nd { fill: var(--field); stroke: var(--accent); stroke-width: 3; }
+.tree .nd.good { fill: var(--good); stroke: var(--good); } .tree .nd.bad { fill: var(--bad); stroke: var(--bad); }
+.tree .dot circle { fill: var(--accent); stroke: var(--field); stroke-width: 2; }
+.tree .dot text { fill: var(--accent-ink); font-weight: 700; text-anchor: middle; }
+.tree .dot.bad circle { fill: var(--bad); opacity: .45; } .tree .dot.good circle { fill: var(--good); }
+.tree .dot.off { opacity: .25; }
+
+/* build tray and mystery card */
+.tray { display: flex; flex-wrap: wrap; gap: 6px; align-content: flex-start; min-height: 44px; }
+.tk { border: 2px solid var(--line); background: var(--field); border-radius: 0; padding: 3px 8px; font-weight: 700; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 5px; }
+.tk .ic { width: 38px; height: 23px; }
+.tk.f { border-radius: 0; border-color: var(--creature); padding: 5px 10px; }
+.tk.sel { border-color: var(--accent); background: var(--accent-soft); }
+.side { display: grid; gap: 8px; align-content: start; min-width: 0; }
+.side p { margin: 0; font-size: 13px; color: var(--muted); }
+.mcard { background: var(--surface); border: 2px solid var(--accent); border-radius: 0; padding: 8px 10px; display: grid; grid-template-columns: clamp(64px, 20vw, 100px) minmax(0, 1fr); gap: 4px 10px; align-items: center; }
+.mcard .ic { width: 100%; height: auto; grid-row: 1 / 3; }
+.mcard h3 { font: 700 16px/1.1 var(--display); margin: 0; }
+.mcard h3 span { font: 700 11px var(--body); letter-spacing: .06em; text-transform: uppercase; color: var(--accent); margin-left: 6px; }
+.st-build { grid-template-rows: minmax(0, 1fr) auto; }
+.st-mystery { grid-template-rows: auto minmax(0, 1fr); }
+@media (min-aspect-ratio: 5/4) {
+  .st-build, .st-mystery { grid-template-rows: minmax(0, 1fr); grid-template-columns: minmax(0, 1fr) minmax(210px, 30%); }
+  .st-mystery .side { order: 2; }
+  .tray { flex-direction: row; }
+  .mcard { grid-template-columns: 1fr; justify-items: center; text-align: center; }
+  .mcard .ic { grid-row: auto; max-width: 150px; } .mcard .chips { justify-content: center; }
+}
+
+/* overlay */
+#ov { position: fixed; inset: 0; z-index: 20; background: rgba(10, 14, 12, .6); display: grid; place-items: center;
+  padding: max(12px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px)) max(12px, env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px)); }
+.panel { background: var(--bg); border: 1px solid var(--line); border-radius: 0; padding: 14px; width: min(100%, 560px); max-height: 100%; display: grid; gap: 10px; grid-template-rows: auto minmax(0, 1fr) auto; }
+.panel h2 { font: 700 20px/1.1 var(--display); margin: 0; }
+.panel p { margin: 0; }
+.panel .big { font-size: 40px; text-align: center; line-height: 1; }
+.panel .row { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+.panel .tblwrap { min-height: 0; height: min(60vh, 420px); }
+@media (prefers-reduced-motion: no-preference) { .card, .lvl, .tk { transition: background-color .12s, border-color .12s; } }
+</style>
+
+<div id="app">
+  <header id="bar"></header>
+  <main id="view"></main>
+</div>
+<div id="ov" hidden></div>
+
+<script>
+(function () {
+'use strict';
+var $ = function (s, r) { return (r || document).querySelector(s); };
+
+/* ---------- features: [short label, table label] ---------- */
+var FL = {
+  backbone: ['Backbone'], bony: ['Bony skeleton'], cart: ['Cartilage skeleton'], limbs4: ['Four limbs'], amnio: ['Waterproof sac', 'Embryo in a waterproof sac'],
+  scaly: ['Dry scaly skin'], hair: ['Hair'], milk: ['Makes milk'], scales: ['Scales'], shellegg: ['Shelled eggs', 'Lays eggs with shells'],
+  wings: ['Wings'], feathers: ['Feathers'], legs6: ['Six legs'], antennae: ['Antennae'], exo: ['Outer skeleton', 'Hard outer skeleton'],
+  jointed: ['Jointed legs'], legs8: ['Eight legs'], legs10: ['Ten legs'], soft: ['Soft body, no legs'], wcover: ['Hard wing covers'], wscale: ['Scaly wings', 'Wings covered in scales'],
+  limbbones: ['Arm and leg bones'], lungs: ['Lungs'], earbone: ['Whale ear bone', 'Whale-type ear bone'], flippers: ['Front flippers'], fluke: ['Tail flukes'],
+  stream: ['Fish-like shape', 'Fish-like body shape'], tinyhind: ['Tiny back legs'], blowhole: ['Blowhole', 'Blowhole on top of head']
+};
+function fs(f) { return FL[f][0]; }
+function fl(f) { return FL[f][1] || FL[f][0]; }
+
+/* ---------- art: silhouettes on a 100 x 60 field ---------- */
+var ST = ' fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"';
+var ICON = {
+  shark: '<path d="M8,32 L1,18 L14,28 Q30,20 52,20 L58,6 L65,21 Q83,23 97,31 Q85,37 66,37 L61,46 L55,37 Q35,39 14,35 L1,46 Z"/><circle class="e" cx="86" cy="28" r="1.8"/>',
+  salmon: '<path d="M10,30 L1,17 L17,26 Q34,15 58,17 Q84,19 97,30 Q84,42 58,43 Q34,45 17,34 L1,44 Z"/><path d="M42,17 L50,7 L60,17 Z M48,43 L54,52 L60,43 Z"/><circle class="e" cx="85" cy="28" r="2"/>',
+  frog: '<path d="M18,44 Q16,26 38,20 Q52,13 66,18 Q76,15 82,24 Q88,31 80,35 L66,37 Q58,43 50,45 Z"/><circle cx="70" cy="18" r="5.5"/><circle class="e" cx="71" cy="17" r="2"/><path d="M22,42 Q8,48 18,54 L44,54 Q36,50 34,44 Z"/><path d="M60,40 L62,54 L70,54 L66,40 Z"/>',
+  lizard: '<path d="M2,42 Q20,38 34,36 Q46,29 62,31 Q74,26 86,30 Q97,32 95,36 Q85,39 71,39 Q58,41 46,41 Q30,43 2,42 Z"/><path d="M40,40 L34,50 L28,52 M42,40 L44,50 L40,54 M64,38 L60,48 L54,50 M68,38 L72,48 L70,52" stroke-width="3.2"' + ST + '/><circle class="e" cx="84" cy="31" r="1.4"/>',
+  mouse: '<ellipse cx="44" cy="37" rx="24" ry="13"/><path d="M58,27 Q78,22 94,38 Q84,46 62,46 Z"/><circle cx="68" cy="22" r="7.5"/><path d="M22,42 Q6,46 4,32 Q4,24 11,21" stroke-width="2.6"' + ST + '/><path d="M32,47 l-2,8 h8 l1,-7 Z M56,47 l0,8 h8 l-2,-8 Z"/><circle class="e" cx="83" cy="35" r="1.6"/>',
+  bird: '<ellipse cx="44" cy="32" rx="22" ry="12" transform="rotate(-14 44 32)"/><circle cx="66" cy="20" r="9"/><path d="M73,17 L86,21 L73,24 Z"/><path d="M26,36 L4,46 L9,38 L3,32 L26,30 Z"/><path d="M42,43 L40,54 M50,42 L50,54" stroke-width="2.4"' + ST + '/><circle class="e" cx="68" cy="18" r="1.6"/>',
+  bat: '<ellipse cx="50" cy="32" rx="7" ry="12"/><path d="M44,24 Q30,10 4,16 Q12,22 8,30 Q18,28 15,38 Q28,32 44,40 Z"/><path d="M56,24 Q70,10 96,16 Q88,22 92,30 Q82,28 85,38 Q72,32 56,40 Z"/><path d="M45,22 L44,14 L49,20 M55,22 L56,14 L51,20"/>',
+  butterfly: '<ellipse cx="50" cy="31" rx="3.2" ry="15"/><path d="M48,27 Q32,0 10,6 Q2,22 22,32 Q38,34 48,30 Z M48,33 Q30,34 20,44 Q24,60 40,53 Q47,45 48,35 Z"/><path d="M52,27 Q68,0 90,6 Q98,22 78,32 Q62,34 52,30 Z M52,33 Q70,34 80,44 Q76,60 60,53 Q53,45 52,35 Z"/><path d="M49,17 Q46,8 40,5 M51,17 Q54,8 60,5" stroke-width="1.8"' + ST + '/>',
+  dragonfly: '<rect x="6" y="28" width="62" height="4.4" rx="2.2"/><ellipse cx="68" cy="30" rx="9" ry="5.5"/><circle cx="82" cy="30" r="5.5"/><g opacity=".7"><ellipse cx="70" cy="13" rx="5.5" ry="15" transform="rotate(24 70 13)"/><ellipse cx="56" cy="14" rx="5" ry="14" transform="rotate(-14 56 14)"/><ellipse cx="70" cy="47" rx="5.5" ry="15" transform="rotate(-24 70 47)"/><ellipse cx="56" cy="46" rx="5" ry="14" transform="rotate(14 56 46)"/></g>',
+  worm: '<path d="M6,42 Q20,20 34,34 T62,34 T93,24" stroke-width="9"' + ST + '/><path d="M57,34 Q62,37 68,35" stroke-width="9" opacity=".45"' + ST + '/>',
+  spider: '<circle cx="50" cy="40" r="13"/><circle cx="50" cy="21" r="8"/><path d="M44,19 L29,7 L15,11 M43,22 L25,19 L10,27 M43,25 L27,33 L14,47 M45,27 L33,43 L27,57 M56,19 L71,7 L85,11 M57,22 L75,19 L90,27 M57,25 L73,33 L86,47 M55,27 L67,43 L73,57" stroke-width="2.6"' + ST + '/>',
+  crab: '<ellipse cx="50" cy="36" rx="22" ry="12"/><path d="M31,29 Q18,24 15,14 M69,29 Q82,24 85,14 M30,38 L15,35 L6,43 M31,42 L17,45 L10,55 M36,45 L26,53 L24,59 M70,38 L85,35 L94,43 M69,42 L83,45 L90,55 M64,45 L74,53 L76,59 M44,25 V17 M56,25 V17" stroke-width="2.8"' + ST + '/><path d="M15,15 Q5,13 8,3 L14,9 L18,2 Q24,10 15,15 Z M85,15 Q95,13 92,3 L86,9 L82,2 Q76,10 85,15 Z"/><circle cx="44" cy="16" r="2.4"/><circle cx="56" cy="16" r="2.4"/>',
+  shrimp: '<path d="M22,45 Q9,31 23,18 Q40,7 63,13 Q78,17 85,27 L72,31 Q59,24 45,26 Q33,28 33,39 Z"/><path d="M22,45 L13,55 L25,52 L31,58 L33,41 Z"/><path d="M84,25 Q93,14 98,3 M81,22 Q88,10 86,2 M45,27 L43,39 M53,26 L53,38 M61,27 L63,38 M69,29 L73,39 M77,29 L83,37" stroke-width="2"' + ST + '/><circle class="e" cx="77" cy="22" r="1.7"/>',
+  beetle: '<ellipse cx="50" cy="37" rx="17" ry="20"/><circle cx="50" cy="12" r="7.5"/><path d="M35,27 L19,19 M33,37 L14,37 M35,47 L19,56 M65,27 L81,19 M67,37 L86,37 M65,47 L81,56 M46,6 L39,1 M54,6 L61,1" stroke-width="3"' + ST + '/><path class="e" d="M49.2,19 h1.6 v37 h-1.6 Z"/>',
+  scorpion: '<path d="M96,30 Q95,17 82,17 L70,18 Q40,22 14,28 L1,30 L14,32 Q40,38 70,42 L82,43 Q95,43 96,30 Z"/><path d="M74,18 Q66,4 53,5 Q58,12 66,20 Z M74,42 Q66,56 53,55 Q58,48 66,40 Z"/><path d="M82,17 L86,7 M89,20 L95,11 M82,43 L86,53 M89,40 L95,49" stroke-width="2.4"' + ST + '/><path class="e" d="M60,21 h1.4 v18 h-1.4 Z M49,23 h1.4 v14 h-1.4 Z M38,25 h1.4 v10 h-1.4 Z M27,27 h1.4 v6 h-1.4 Z"/><circle class="e" cx="86" cy="26" r="1.6"/><circle class="e" cx="86" cy="34" r="1.6"/>',
+  cow: '<path d="M18,22 Q18,16 26,16 H72 Q78,16 80,20 L86,14 Q96,14 97,24 L95,32 Q90,36 84,32 L80,30 V56 H74 V42 H70 V56 H64 V40 H34 V56 H28 V42 H25 V56 H19 V36 Q15,38 13,48 L10,47 Q11,30 18,22 Z"/><ellipse cx="45" cy="41" rx="6" ry="4"/><path d="M85,15 L83,7 L89,13 Z"/><circle class="e" cx="89" cy="21" r="1.6"/>',
+  paki: '<path d="M9,28 Q2,35 3,47 L6,47 Q7,38 14,34 L20,36 V55 H25 V41 H29 V55 H34 V39 H55 V55 H60 V41 H65 V55 H70 V37 Q75,36 80,33 L97,30 L97,26 L79,22 Q70,22 62,26 H34 Q20,24 9,28 Z"/><path d="M71,23 L72,15 L78,22 Z"/><circle class="e" cx="82" cy="26" r="1.5"/>',
+  ambulo: '<path d="M1,37 Q16,30 30,30 Q44,24 62,27 Q72,26 80,28 L98,30 L98,35 L80,38 Q70,41 63,40 L65,48 L75,50 L75,54 L58,54 L54,42 H37 L35,48 L43,51 V55 H26 L26,42 Q14,41 1,37 Z"/><circle class="e" cx="82" cy="31" r="1.5"/>',
+  basilo: '<path d="M4,20 Q1,11 10,16 L15,23 Q30,34 50,30 Q70,24 86,26 Q97,27 99,31 Q97,36 86,37 Q70,40 52,42 Q30,45 13,30 L7,35 Q2,30 6,25 Z"/><path d="M74,37 Q73,48 64,51 Q68,43 67,38 Z M37,41 l-3,7 l5,-1 l2,-6 Z"/><circle class="e" cx="88" cy="30" r="1.6"/>',
+  dolphin: '<path d="M4,34 Q0,24 9,27 L15,32 Q30,20 54,19 L60,7 L67,20 Q84,22 92,28 L99,31 L92,34 Q84,41 64,42 Q40,44 17,38 L10,46 Q3,44 8,37 Z"/><path d="M62,40 Q60,51 50,54 Q56,45 55,40 Z"/><circle class="e" cx="85" cy="28" r="1.6"/>',
+  whale: '<path d="M5,30 Q2,20 11,24 L16,29 Q32,16 60,16 Q87,16 97,30 Q93,41 70,43 Q40,45 18,36 L10,43 Q3,41 8,34 Z"/><path d="M56,40 Q54,54 40,57 Q49,46 48,40 Z"/><circle class="e" cx="84" cy="29" r="1.8"/>',
+  tikt: '<path d="M12,30 L1,20 L3,30 L1,40 Z"/><path d="M8,30 Q30,20 52,22 Q68,20 82,24 Q97,27 99,32 Q97,37 82,38 Q68,42 52,40 Q30,42 8,30 Z"/><path d="M66,39 L74,51 L63,53 L57,41 Z M35,40 L39,50 L30,51 L27,41 Z"/><circle class="e" cx="85" cy="27" r="2"/>',
+  turtle: '<path d="M19,40 Q21,13 50,13 Q79,13 81,40 Z"/><path d="M16,38 H84 V43 H16 Z"/><ellipse cx="89" cy="33" rx="8.5" ry="5.5"/><path d="M27,42 l-4,12 h11 l2,-12 Z M64,42 l2,12 h11 l-4,-12 Z M18,40 L7,45 L18,35 Z"/><circle class="e" cx="92" cy="32" r="1.5"/>',
+  archae: '<ellipse cx="46" cy="33" rx="20" ry="11" transform="rotate(-12 46 33)"/><circle cx="68" cy="20" r="8"/><path d="M73,15 L92,20 L74,25 Z"/><path d="M30,34 L3,52 L6,45 L0,42 L7,39 L2,34 L28,28 Z"/><path d="M40,27 Q32,6 54,1 L50,10 L59,7 L53,16 L60,15 L52,29 Z"/><path d="M44,43 L42,55 M52,42 L53,55" stroke-width="2.4"' + ST + '/><circle class="e" cx="70" cy="18" r="1.6"/>'
+};
+function icon(k) { return '<svg class="ic" viewBox="0 0 100 60" aria-hidden="true">' + ICON[k] + '</svg>'; }
+
+/* ---------- worlds ---------- */
+var WORLDS = [
+  { id: 'w1', name: 'Backbones', tag: 'Fish, frogs and furry things', face: 'frog',
+    feats: ['backbone', 'bony', 'limbs4', 'amnio', 'scaly', 'hair', 'milk', 'cart'],
+    taxa: [
+      { k: 'shark', n: 'Shark', f: ['backbone', 'cart'] }, { k: 'salmon', n: 'Salmon', f: ['backbone', 'bony'] },
+      { k: 'frog', n: 'Frog', f: ['backbone', 'bony', 'limbs4'] }, { k: 'lizard', n: 'Lizard', f: ['backbone', 'bony', 'limbs4', 'amnio', 'scaly'] },
+      { k: 'mouse', n: 'Mouse', f: ['backbone', 'bony', 'limbs4', 'amnio', 'hair', 'milk'] }],
+    tree: ['shark', ['salmon', ['frog', ['lizard', 'mouse']]]], marks: ['backbone', 'bony', 'limbs4', 'amnio'],
+    traps: [{ p: ['shark', 'salmon'], t: 'They look alike because both swim, but a salmon has a bony skeleton like a frog. A shark\'s skeleton is cartilage.' }],
+    mystery: [
+      { k: 'tikt', n: 'Tiktaalik', fossil: 1, has: ['backbone', 'bony'], extra: ['Fins with wrist bones', 'Flat head and a neck'], lacks: ['No four limbs', 'No waterproof sac'], at: 'b:limbs4',
+        why: 'Tiktaalik has a bony skeleton, so it joins after that tag. It does not have four limbs, so it branches off just below the Four limbs tag.' },
+      { k: 'turtle', n: 'Turtle', has: ['backbone', 'bony', 'limbs4', 'amnio', 'scaly'], extra: [], lacks: ['No hair', 'No milk'], at: 't:lizard',
+        why: 'A turtle shares every feature the lizard has, including dry scaly skin. It has no hair or milk, so it joins the lizard branch.' }] },
+  { id: 'w2', name: 'Fliers', tag: 'Wings can fool you', face: 'bat',
+    feats: ['backbone', 'limbs4', 'scales', 'shellegg', 'feathers', 'hair', 'milk', 'wings', 'legs6', 'antennae', 'exo'],
+    taxa: [
+      { k: 'butterfly', n: 'Butterfly', f: ['wings', 'legs6', 'antennae', 'exo'] }, { k: 'lizard', n: 'Lizard', f: ['backbone', 'limbs4', 'scales', 'shellegg'] },
+      { k: 'bird', n: 'Bird', f: ['backbone', 'limbs4', 'scales', 'shellegg', 'feathers', 'wings'] }, { k: 'mouse', n: 'Mouse', f: ['backbone', 'limbs4', 'hair', 'milk'] },
+      { k: 'bat', n: 'Bat', f: ['backbone', 'limbs4', 'hair', 'milk', 'wings'] }],
+    tree: ['butterfly', [['lizard', 'bird'], ['mouse', 'bat']]], marks: ['backbone', 'scales', 'hair'],
+    traps: [{ p: ['bird', 'bat'], t: 'Bird and bat wings look alike, but wings appeared separately in each group. One look-alike feature is weak evidence.' },
+      { p: ['butterfly', 'bird'], t: 'Insect wings and bird wings are built from completely different parts.' }, { p: ['butterfly', 'bat'], t: 'Insect wings and bat wings are built from completely different parts.' }],
+    mystery: [
+      { k: 'archae', n: 'Archaeopteryx', fossil: 1, has: ['backbone', 'limbs4', 'scales', 'feathers', 'wings'], extra: ['Teeth', 'Long bony tail'], lacks: ['No hair'], at: 't:bird',
+        why: 'Archaeopteryx has feathers and wings like a bird, plus teeth and a bony tail like a lizard. It joins the bird branch.' },
+      { k: 'dragonfly', n: 'Dragonfly', has: ['wings', 'legs6', 'antennae', 'exo'], extra: [], lacks: ['No backbone'], at: 't:butterfly',
+        why: 'A dragonfly has six legs, antennae and an outer skeleton like the butterfly. It has no backbone, so its wings do not put it with birds or bats.' }] },
+  { id: 'w3', name: 'Jointed Legs', tag: 'Count the legs', face: 'crab',
+    feats: ['jointed', 'exo', 'antennae', 'legs6', 'wings', 'wscale', 'wcover', 'legs8', 'legs10', 'soft'],
+    taxa: [
+      { k: 'worm', n: 'Earthworm', f: ['soft'] }, { k: 'spider', n: 'Spider', f: ['jointed', 'exo', 'legs8'] },
+      { k: 'crab', n: 'Crab', f: ['jointed', 'exo', 'antennae', 'legs10'] }, { k: 'beetle', n: 'Beetle', f: ['jointed', 'exo', 'antennae', 'legs6', 'wings', 'wcover'] },
+      { k: 'butterfly', n: 'Butterfly', f: ['jointed', 'exo', 'antennae', 'legs6', 'wings', 'wscale'] }],
+    tree: ['worm', ['spider', ['crab', ['beetle', 'butterfly']]]], marks: ['jointed', 'antennae', 'legs6'], traps: [],
+    mystery: [
+      { k: 'scorpion', n: 'Sea scorpion', fossil: 1, has: ['jointed', 'exo', 'legs8'], extra: ['Swimming paddles'], lacks: ['No antennae'], at: 't:spider',
+        why: 'The sea scorpion has jointed legs and eight walking legs but no antennae. That matches the spider, so it joins the spider branch.' },
+      { k: 'shrimp', n: 'Shrimp', has: ['jointed', 'exo', 'antennae', 'legs10'], extra: [], lacks: ['No wings', 'Not six legs'], at: 't:crab',
+        why: 'A shrimp has antennae and ten legs like the crab. It joins the crab branch.' }] },
+  { id: 'w4', name: 'Back to the Sea', tag: 'Where whales came from', face: 'dolphin',
+    feats: ['backbone', 'limbbones', 'lungs', 'earbone', 'flippers', 'fluke', 'tinyhind', 'blowhole', 'stream', 'cart'],
+    taxa: [
+      { k: 'shark', n: 'Shark', f: ['backbone', 'stream', 'cart'] }, { k: 'cow', n: 'Cow', f: ['backbone', 'limbbones', 'lungs'] },
+      { k: 'paki', n: 'Pakicetus', fossil: 1, f: ['backbone', 'limbbones', 'lungs', 'earbone'] },
+      { k: 'basilo', n: 'Basilosaurus', fossil: 1, f: ['backbone', 'limbbones', 'lungs', 'earbone', 'flippers', 'fluke', 'stream', 'tinyhind'] },
+      { k: 'dolphin', n: 'Dolphin', f: ['backbone', 'limbbones', 'lungs', 'earbone', 'flippers', 'fluke', 'stream', 'blowhole'] }],
+    tree: ['shark', ['cow', ['paki', ['basilo', 'dolphin']]]], marks: ['backbone', 'limbbones', 'earbone', 'flippers'],
+    traps: [{ p: ['shark', 'dolphin'], t: 'Sharks and dolphins share a body shape because both swim, but a dolphin has lungs and arm bones like a cow.' },
+      { p: ['shark', 'basilo'], t: 'A fish-like shape is a look-alike feature. Basilosaurus has lungs and arm bones like a cow.' }],
+    mystery: [
+      { k: 'ambulo', n: 'Ambulocetus', fossil: 1, has: ['backbone', 'limbbones', 'lungs', 'earbone'], extra: ['Big paddling feet'], lacks: ['No flippers', 'No tail flukes'], at: 'b:flippers',
+        why: 'Ambulocetus has the whale-type ear bone, so it joins after that tag. Its legs are not flippers yet, so it branches off just below the Front flippers tag.' },
+      { k: 'whale', n: 'Humpback whale', has: ['backbone', 'limbbones', 'lungs', 'earbone', 'flippers', 'fluke', 'stream', 'blowhole'], extra: [], lacks: ['No back legs'], at: 't:dolphin',
+        why: 'A humpback shares every feature the dolphin has, including a blowhole on top of its head. It joins the dolphin branch.' }] }
+];
+var MODES = [['spot', 'Spot'], ['compare', 'Compare'], ['build', 'Build'], ['read', 'Read'], ['mystery', 'Mystery']];
+
+/* ---------- tree helpers ---------- */
+WORLDS.forEach(function (w) {
+  w.by = {}; w.taxa.forEach(function (t) { w.by[t.k] = t; });
+  var nodes = [], tips = [];
+  (function rec(t, parent) {
+    var n = { id: nodes.length, parent: parent, kids: [], tips: [] }; nodes.push(n);
+    if (typeof t === 'string') { n.tip = t; n.tips = [t]; n.ti = tips.length; n.idx = [n.ti]; tips.push(n); }
+    else { n.idx = []; t.forEach(function (c) { var k = rec(c, n); n.kids.push(k); n.tips = n.tips.concat(k.tips); n.idx = n.idx.concat(k.idx); }); }
+    return n;
+  })(w.tree, null);
+  w.marks.forEach(function (f) {
+    var set = w.taxa.filter(function (t) { return t.f.indexOf(f) >= 0; }).map(function (t) { return t.k; }).sort().join();
+    nodes.forEach(function (n) { if (n.tips.slice().sort().join() === set) n.mark = f; });
+  });
+  w.T = { nodes: nodes, tips: tips, root: nodes[0] };
+});
+function nm(w, k) { return w.by[k].n; }
+function shared(w, a, b) { return w.by[a].f.filter(function (f) { return w.by[b].f.indexOf(f) >= 0; }); }
+function mrca(w, a, b) { var best = null; w.T.nodes.forEach(function (n) { if (n.tips.indexOf(a) >= 0 && n.tips.indexOf(b) >= 0 && (!best || n.tips.length < best.tips.length)) best = n; }); return best; }
+function closest(w, tri) { var ps = [[0, 1], [0, 2], [1, 2]], best = null; ps.forEach(function (p) { var s = mrca(w, tri[p[0]], tri[p[1]]).tips.length; if (!best || s < best.s) best = { s: s, p: [tri[p[0]], tri[p[1]]] }; }); return best.p; }
+function triples(w) { var k = w.taxa.map(function (t) { return t.k; }), out = []; for (var a = 0; a < 5; a++) for (var b = a + 1; b < 5; b++) for (var c = b + 1; c < 5; c++) out.push([k[a], k[b], k[c]]); return out; }
+function list(a) { return a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1]; }
+
+/* ---------- saved progress ---------- */
+var KEY = 'family-tree-challenge-v1', S = { seed: Math.floor(Math.random() * 1e9), stars: {}, best: {}, plays: {} };
+try { var sv = JSON.parse(localStorage.getItem(KEY)); if (sv && sv.stars) S = sv; } catch (e) {}
+function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+function rngFor(str) { var h = S.seed >>> 0; for (var i = 0; i < str.length; i++) h = Math.imul(h ^ str.charCodeAt(i), 2654435761) >>> 0; return function () { h |= 0; h = h + 0x6D2B79F5 | 0; var t = Math.imul(h ^ h >>> 15, 1 | h); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function shuffle(a, r) { a = a.slice(); for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(r() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+function pick(a, r) { return a[Math.floor(r() * a.length)]; }
+function starStr(n) { return '<span class="stars" aria-label="' + n + ' of 3 stars">' + '★'.repeat(n) + '<i>' + '★'.repeat(3 - n) + '</i></span>'; }
+
+/* ---------- shared pieces ---------- */
+var L = null, view = $('#view'), bar = $('#bar'), ov = $('#ov');
+function isWide() { return window.innerWidth >= window.innerHeight * 1.25; }
+
+function tableHTML(w, o) {
+  o = o || {}; var rc = o.rowCls || {}, cc = o.colCls || {};
+  var h = '<div class="tbl" style="grid-template-rows:auto repeat(' + w.feats.length + ',minmax(0,1fr))"><div class="th corner">Feature</div>';
+  w.taxa.forEach(function (t) { var tag = o.cols ? 'button' : 'div'; h += '<' + tag + ' class="th ' + (cc[t.k] || '') + '"' + (o.cols ? ' data-col="' + t.k + '"' : '') + '>' + icon(t.k) + '<span>' + t.n.replace(/(saurus|cetus|worm|fly)$/, '&shy;$1') + '</span></' + tag + '>'; });
+  w.feats.forEach(function (f) {
+    var tag = o.rows ? 'button' : 'div';
+    h += '<' + tag + ' class="rl ' + (rc[f] || '') + ' ' + ((o.lab || {})[f] || '') + '"' + (o.rows ? ' data-row="' + f + '"' : '') + '>' + fl(f) + '</' + tag + '>';
+    w.taxa.forEach(function (t) { h += '<div class="c ' + (t.f.indexOf(f) >= 0 ? 'y ' : 'n ') + (rc[f] || cc[t.k] || '') + (o.ticks && o.ticks[f] && o.ticks[f].indexOf(t.k) >= 0 ? ' tick' : '') + '"></div>'; });
+  });
+  return h + '</div>';
+}
+
+function treeSVG(w, o) {
+  o = o || {}; var T = w.T, wide = isWide(), W = wide ? 640 : 390, pad = wide ? 66 : 38, u = (W - 2 * pad) / (T.tips.length - 1), k, tipY = 70, fz = wide ? 13 : 12;
+  var stg = $('#stage'), sw = stg.clientWidth || W, sh = stg.clientHeight || 300, bw = wide && o.side ? sw * 0.7 : sw, bh = wide ? sh : sh - (o.side || 0);
+  k = Math.max(0.7, Math.min(2, (W * (bh - 12) / (bw - 12) - 126) / (u * (T.tips.length - 1) / 2)));
+  T.nodes.forEach(function (n) { var mn = Math.min.apply(null, n.idx), mx = Math.max.apply(null, n.idx); n.x = pad + u * (mn + mx) / 2; n.y = tipY + u * (mx - mn) / 2 * k; });
+  var H = T.root.y + (T.root.mark ? 54 : 28), s = '<svg class="tree" viewBox="0 0 ' + W + ' ' + Math.round(H) + '" role="group" aria-label="Family tree">';
+  function f1(v) { return Math.round(v * 10) / 10; }
+  T.nodes.forEach(function (n) { if (n.parent) s += '<path class="br" d="M' + f1(n.parent.x) + ',' + f1(n.parent.y) + ' L' + f1(n.x) + ',' + f1(n.y) + '"/>'; });
+  s += '<path class="br" d="M' + f1(T.root.x) + ',' + f1(T.root.y) + ' V' + f1(H - 5) + '"/>';
+  // feature tags
+  T.nodes.forEach(function (n) {
+    if (!n.mark) return;
+    var p = n.parent, mx, my, dir = 1;
+    if (p) { mx = p.x + (n.x - p.x) * 0.64; my = p.y + (n.y - p.y) * 0.64; dir = n.x >= p.x ? 1 : -1; } else { mx = n.x; my = n.y + 30; }
+    var f = o.build ? o.build.marks[n.id] : n.mark, txt = f ? fs(f) : '?', wd = Math.max(o.build ? 96 : 40, txt.length * (fz * 0.57) + 18), x0 = mx - wd / 2; if (x0 < 2) x0 = 2;
+    if (x0 + wd > W - 2) x0 = W - 2 - wd;
+    var cls = 'pill' + (o.build ? ' slot' + (f ? ' filled' : '') : '') + ' ' + ((o.markCls || {})[n.id] || '');
+    s += '<g class="' + cls + '"' + (o.build || o.marksTap ? ' data-mark="' + n.id + '" tabindex="0" role="button" aria-label="Feature tag: ' + txt + '"' : '') + '><rect x="' + f1(x0) + '" y="' + f1(my - 11) + '" width="' + f1(wd) + '" height="22"/><text x="' + f1(x0 + wd / 2) + '" y="' + f1(my + 4.3) + '" font-size="' + fz + '">' + txt + '</text></g>';
+  });
+  // branch points
+  T.nodes.forEach(function (n) {
+    if (n.tip) return;
+    if (o.nodes) s += '<circle class="nd ' + ((o.nodeCls || {})[n.id] || '') + '" data-node="' + n.id + '" tabindex="0" role="button" aria-label="Branch point" cx="' + f1(n.x) + '" cy="' + f1(n.y) + '" r="' + (wide ? 11 : 10) + '"/>' + '<circle data-node="' + n.id + '" cx="' + f1(n.x) + '" cy="' + f1(n.y) + '" r="17" fill="transparent"/>';
+    else s += '<circle class="jn" cx="' + f1(n.x) + '" cy="' + f1(n.y) + '" r="4.5"/>';
+  });
+  // joining points for the mystery creature
+  if (o.dots) T.nodes.forEach(function (n) {
+    var p = n.parent; if (!p || (!n.tip && !n.mark)) return;
+    var t = n.tip ? 0.5 : 0.2, id = n.tip ? 't:' + n.tip : 'b:' + n.mark, x = p.x + (n.x - p.x) * t, y = p.y + (n.y - p.y) * t, c = o.dotCls[id] || '';
+    s += '<g class="dot ' + c + '" data-dot="' + id + '" tabindex="0" role="button" aria-label="Join here: ' + (n.tip ? nm(w, n.tip) + ' branch' : 'below ' + fs(n.mark)) + '"><circle cx="' + f1(x) + '" cy="' + f1(y) + '" r="10.5"/><circle cx="' + f1(x) + '" cy="' + f1(y) + '" r="17" style="fill:transparent;stroke:none"/><text x="' + f1(x) + '" y="' + f1(y + 4.5) + '" font-size="14">' + (c === 'good' ? '✓' : c === 'bad' ? '✕' : '+') + '</text></g>';
+  });
+  // tips
+  T.tips.forEach(function (n) {
+    var tx = o.build ? o.build.tips[n.ti] : n.tip, cls = (o.build ? 'slot' + (tx ? ' filled' : '') : '') + ' ' + ((o.tipCls || {})[n.ti] || ''), name = tx ? nm(w, tx) : '';
+    s += '<g class="' + cls + '"' + (o.tips ? ' data-tip="' + n.ti + '" tabindex="0" role="button" aria-label="' + (name || 'Empty branch tip') + '"' : '') + '><rect class="tb" x="' + f1(n.x - 35) + '" y="2" width="70" height="62"/>';
+    if (tx) s += '<svg class="ic" x="' + f1(n.x - 28) + '" y="6" width="56" height="34" viewBox="0 0 100 60">' + ICON[tx] + '</svg><text class="tn" x="' + f1(n.x) + '" y="56" font-size="' + (name.length > 10 ? fz - 2 : name.length > 8 ? fz - 1 : fz) + '">' + name + '</text>';
+    else s += '<text class="tn" x="' + f1(n.x) + '" y="40" font-size="18" style="fill:var(--muted)">?</text>';
+    s += '</g>';
+  });
+  return s + '</svg>';
+}
+
+function setPrompt(h) { $('#prompt').innerHTML = h; }
+function setFB(h, c) { var e = $('#fb'); e.className = 'fb ' + (c || ''); e.innerHTML = h || ''; }
+function setActs(a) { var box = $('#acts'); box.innerHTML = ''; a.forEach(function (b) { var e = document.createElement('button'); e.type = 'button'; e.className = 'btn ' + (b.cls || ''); e.textContent = b.t; e.disabled = !!b.off; e.addEventListener('click', b.fn); box.appendChild(e); }); }
+function verdict(ok, text) { setFB('<b>' + (ok ? 'Correct.' : 'Not this time.') + '</b> ' + text, ok ? 'good' : 'bad'); }
+function finishRound(pts) { L.pts += pts; L.r.done = true; L.draw(); setActs([{ t: L.i + 1 < L.rounds.length ? 'Next' : 'Finish', cls: 'pri', fn: nextRound }]); }
+function nextRound() { L.i++; if (L.i >= L.rounds.length) return finishLevel(); L.r = L.rounds[L.i]; setFB(''); setActs([]); drawBar(); L.draw(); }
+
+function drawBar() {
+  if (!L) { var tot = 0; for (var k in S.stars) tot += S.stars[k]; bar.innerHTML = '<h1>Family Tree Challenge</h1>' + '<span class="count"><span class="stars">★</span> ' + tot + ' / 60</span>'; return; }
+  bar.innerHTML = '<button type="button" class="btn" id="bMap">‹ Map</button><h1>' + L.w.name + '<small>' + L.label + '</small></h1>' +
+    (L.mode !== 'spot' && L.mode !== 'compare' ? '<button type="button" class="btn" id="bEv">Evidence</button>' : '') + '<span class="count">' + Math.min(L.i + 1, L.rounds.length) + ' / ' + L.rounds.length + '</span>';
+  $('#bMap').addEventListener('click', home);
+  if ($('#bEv')) $('#bEv').addEventListener('click', function () { showOv('<div class="panel"><h2>Evidence table: ' + L.w.name + '</h2><div class="tblwrap">' + tableHTML(L.w) + '</div><div class="row"><button type="button" class="btn pri" data-close>Back to the tree</button></div></div>'); });
+}
+function showOv(h) { ov.innerHTML = h; ov.hidden = false; var b = $('[data-close]', ov); if (b) { b.addEventListener('click', hideOv); b.focus(); } }
+function hideOv() { ov.hidden = true; ov.innerHTML = ''; }
+
+/* ---------- home ---------- */
+function unlocked(w, mi) { return mi === 0 || (S.stars[w.id + '-' + MODES[mi - 1][0]] || 0) >= 1; }
+function home() {
+  L = null; hideOv(); drawBar();
+  var h = '<div class="home"><p class="rule"><b>The rule:</b> creatures that share more body features share a more recent common ancestor. Earn a star to unlock the next level.</p><div class="worlds">';
+  WORLDS.forEach(function (w, wi) {
+    h += '<section class="world"><h2>' + icon(w.face) + w.name + '<small>' + w.tag + '</small></h2><div class="lvls">';
+    var nextSet = false;
+    MODES.forEach(function (m, mi) {
+      var id = w.id + '-' + m[0], st = S.stars[id] || 0, open = unlocked(w, mi), nx = open && !st && !nextSet; if (nx) nextSet = true;
+      h += '<button type="button" class="lvl' + (nx ? ' next' : '') + '" data-w="' + wi + '" data-m="' + mi + '"' + (open ? '' : ' disabled') + ' aria-label="' + w.name + ', ' + m[1] + (open ? ', ' + st + ' of 3 stars' : ', locked') + '"><b>' + m[1] + '</b>' + (open ? starStr(st) : '<span class="stars"><i>locked</i></span>') + '</button>';
+    });
+    h += '</div></section>';
+  });
+  h += '</div><div class="homefoot"><span>Spot → Compare → Build → Read → Mystery</span><button type="button" class="btn" id="bReset">Reset progress</button></div></div>';
+  view.innerHTML = h;
+  var rb = $('#bReset'), armed = false;
+  rb.addEventListener('click', function () { if (!armed) { armed = true; rb.textContent = 'Tap again to erase stars'; return; } S.stars = {}; S.best = {}; S.plays = {}; save(); home(); });
+}
+view.addEventListener('click', function (e) {
+  var b = e.target.closest('.lvl'); if (b && !b.disabled) return start(+b.dataset.w, +b.dataset.m);
+  if (!L || L.r.done) return;
+  var t = e.target.closest('[data-card],[data-row],[data-col],[data-tip],[data-mark],[data-node],[data-dot],[data-tray]'); if (!t || t.disabled) return;
+  var d = t.dataset, key = Object.keys(d)[0]; L.tap(key, d[key]);
+});
+view.addEventListener('keydown', function (e) { if ((e.key === 'Enter' || e.key === ' ') && e.target.closest && e.target.closest('svg [tabindex]')) { e.preventDefault(); e.target.dispatchEvent(new MouseEvent('click', { bubbles: true })); } });
+
+/* ---------- level engine ---------- */
+function start(wi, mi) {
+  var w = WORLDS[wi], mode = MODES[mi][0], id = w.id + '-' + mode;
+  hideOv(); S.plays[id] = (S.plays[id] || 0) + 1; save();
+  L = { w: w, wi: wi, mi: mi, mode: mode, id: id, label: MODES[mi][1], i: 0, pts: 0, rng: rngFor(id + ':' + S.plays[id]) };
+  view.innerHTML = '<div class="play"><p class="prompt" id="prompt"></p><div class="stage st-' + mode + '" id="stage"></div><div class="foot"><p class="fb" id="fb" aria-live="polite"></p><div class="acts" id="acts"></div></div></div>';
+  GAME[mode](L); L.r = L.rounds[0]; drawBar(); L.draw();
+}
+function finishLevel() {
+  var frac = L.pts / L.max, st = L.starsFixed != null ? L.starsFixed : frac >= 0.8 ? 3 : frac >= 0.65 ? 2 : frac >= 0.45 ? 1 : 0;
+  S.stars[L.id] = Math.max(S.stars[L.id] || 0, st); save();
+  var more = L.mi + 1 < MODES.length, canNext = more && st >= 1, wi = L.wi, mi = L.mi;
+  showOv('<div class="panel"><h2>' + L.w.name + ': ' + L.label + '</h2><div><p class="big">' + starStr(st) + '</p><p style="text-align:center;margin-top:8px">' + (L.summary || 'You earned ' + L.pts + ' of ' + L.max + ' points.') + (st < 1 ? ' Earn at least one star to unlock the next level.' : '') + '</p></div><div class="row"><button type="button" class="btn" id="oMap">Map</button><button type="button" class="btn' + (canNext ? '' : ' pri') + '" id="oRe">Play again</button>' + (canNext ? '<button type="button" class="btn pri" id="oNx">Next level</button>' : '') + '</div></div>');
+  $('#oMap').addEventListener('click', home);
+  $('#oRe').addEventListener('click', function () { hideOv(); start(wi, mi); });
+  if (canNext) { $('#oNx').addEventListener('click', function () { hideOv(); start(wi, mi + 1); }); $('#oNx').focus(); }
+}
+
+var GAME = {};
+
+/* 1. SPOT: pick the two closest relatives out of three */
+GAME.spot = function (L) {
+  var w = L.w, r = L.rng;
+  function trap(tri) { var ans = closest(w, tri); return w.traps.filter(function (t) { return tri.indexOf(t.p[0]) >= 0 && tri.indexOf(t.p[1]) >= 0 && !(ans.indexOf(t.p[0]) >= 0 && ans.indexOf(t.p[1]) >= 0); })[0]; }
+  var all = shuffle(triples(w), r), easy = all.filter(function (t) { return !trap(t); }), hard = all.filter(trap), nh = Math.min(3, hard.length);
+  L.rounds = easy.slice(0, 6 - nh).concat(hard.slice(0, nh)).map(function (t) { var tri = shuffle(t, r), tp = trap(tri); return { tri: tri, ans: closest(w, tri), trap: tp, step: tp ? 'look' : 'feat', sel: [], look: null, hl: null }; });
+  L.max = 6;
+  function pair(a) { return a.map(function (i) { return nm(L.w, L.r.tri[i]); }); }
+  L.draw = function () {
+    var q = L.r, tri = q.tri, st = $('#stage');
+    if (q.step === 'look') {
+      setPrompt('<b>Which two LOOK the most alike?</b> Go by the pictures only. Any answer is fine here.');
+      st.innerHTML = '<div class="cards">' + tri.map(function (k, i) { var on = q.sel.indexOf(i) >= 0; return '<button type="button" class="card' + (on ? ' sel' : '') + '" data-card="' + i + '" aria-pressed="' + on + '">' + icon(k) + '<span class="cn">' + nm(w, k) + '</span></button>'; }).join('') + '</div>';
+      return setActs([{ t: 'Lock in', cls: 'pri', off: q.sel.length < 2, fn: function () { q.look = q.sel.map(function (i) { return tri[i]; }); q.sel = []; q.step = 'feat'; setFB('<b>Now check the evidence.</b> Your pick is saved. The checklist shows which body features each creature has.'); L.draw(); } }]);
+    }
+    setPrompt('<b>Which two are the closest relatives?</b> Tap two creatures. Count the features both have. Missing features don\'t count. Tap a feature to highlight its row.');
+    var rows = w.feats.filter(function (f) { return tri.some(function (k) { return w.by[k].f.indexOf(f) >= 0; }); }), sh = shared(w, q.ans[0], q.ans[1]);
+    var D = 650, lock = !q.done && !q.revealed;
+    if (lock && !q.t0) {
+      q.t0 = performance.now();
+      if (!$('#fb').textContent) { q.rvMsg = true; setFB('<b>Read each feature as it appears.</b> You can choose once the checklist is complete.'); }
+      setTimeout(function () { q.revealed = true; if (L && L.r === q && !q.done) { if (q.rvMsg) setFB('<b>Checklist complete.</b> Now tap the two closest relatives.'); L.draw(); } }, (rows.length - 1) * D + 500);
+    }
+    var el = lock ? performance.now() - q.t0 : 0;
+    function rv(ri) { return lock ? ' rv" style="animation-delay:' + Math.round(ri * D - el) + 'ms' : ''; }
+    var h = '<div class="tbl sp' + (lock ? ' locked' : '') + '" style="grid-template-rows:minmax(64px,1.7fr) repeat(' + rows.length + ',minmax(0,1fr))"><div class="th corner">Body feature</div>';
+    function colCls(i) { var k = tri[i]; if (!q.done) return q.sel.indexOf(i) >= 0 ? 'sel' : ''; return q.ans.indexOf(k) >= 0 ? 'good' : q.sel.indexOf(i) >= 0 ? 'bad' : ''; }
+    tri.forEach(function (k, i) { var on = q.sel.indexOf(i) >= 0; h += '<button type="button" class="th ' + colCls(i) + '" data-card="' + i + '" aria-pressed="' + on + '"' + (q.done || lock ? ' disabled' : '') + '>' + icon(k) + '<span>' + nm(w, k).replace(/(saurus|cetus|worm|fly)$/, '&shy;$1') + '</span></button>'; });
+    rows.forEach(function (f, ri) {
+      var hl = q.hl === f ? ' hl' : '';
+      h += '<button type="button" class="rl' + hl + (q.done && sh.indexOf(f) >= 0 ? ' lg' : '') + rv(ri) + '" data-row="' + f + '"' + (q.done || lock ? ' disabled' : '') + '>' + fl(f) + '</button>';
+      tri.forEach(function (k, i) {
+        var y = w.by[k].f.indexOf(f) >= 0, c = 'c ' + (y ? 'y' : 'n');
+        if (q.done && y && sh.indexOf(f) >= 0 && q.ans.indexOf(k) >= 0) c += ' tick';
+        else if (hl) c += hl; else if (!q.done && q.sel.indexOf(i) >= 0) c += ' sel';
+        h += '<div class="' + c + rv(ri) + '"></div>';
+      });
+    });
+    st.innerHTML = h + '</div>';
+    if (!q.done) setActs([{ t: 'Check', cls: 'pri', off: lock || q.sel.length < 2, fn: check }]);
+  };
+  L.tap = function (key, v) {
+    var q = L.r;
+    if (q.step === 'feat' && !q.revealed) return;
+    if (key === 'card') { var i = +v, at = q.sel.indexOf(i); if (at >= 0) q.sel.splice(at, 1); else { q.sel.push(i); if (q.sel.length > 2) q.sel.shift(); } }
+    if (key === 'row') q.hl = q.hl === v ? null : v;
+    L.draw();
+  };
+  function check() {
+    var q = L.r, pk = q.sel.map(function (i) { return q.tri[i]; }), ok = pk.indexOf(q.ans[0]) >= 0 && pk.indexOf(q.ans[1]) >= 0;
+    var a = q.ans[0], b = q.ans[1], o = q.tri.filter(function (k) { return q.ans.indexOf(k) < 0; })[0];
+    var txt = nm(w, a) + ' and ' + nm(w, b) + ' both have ' + shared(w, a, b).length + ' of these features (checked). ' + nm(w, o) + ' has ' + shared(w, o, a).length + ' in common with ' + nm(w, a) + ' and ' + shared(w, o, b).length + ' with ' + nm(w, b) + '.';
+    if (q.look) {
+      var same = q.look.indexOf(a) >= 0 && q.look.indexOf(b) >= 0;
+      txt += same ? ' You said ' + nm(w, q.look[0]) + ' and ' + nm(w, q.look[1]) + ' look the most alike, and here the looks and the features agree.' : ' You said ' + nm(w, q.look[0]) + ' and ' + nm(w, q.look[1]) + ' look the most alike. ' + q.trap.t;
+    }
+    verdict(ok, txt); finishRound(ok ? 1 : 0);
+  }
+};
+
+/* 2. COMPARE: answer from the evidence table */
+GAME.compare = function (L) {
+  var w = L.w, r = L.rng, ks = w.taxa.map(function (t) { return t.k; }), tris = shuffle(triples(w), r);
+  function qCount() { var p = shuffle(ks, r); return { t: 'count', a: p[0], b: p[1], n: shared(w, p[0], p[1]).length }; }
+  function qMost() {
+    var xs = shuffle(ks, r);
+    for (var i = 0; i < xs.length; i++) { var x = xs[i], sc = ks.filter(function (k) { return k !== x; }).map(function (k) { return [k, shared(w, x, k).length]; }).sort(function (a, b) { return b[1] - a[1]; }); if (sc[0][1] > sc[1][1]) return { t: 'most', x: x, y: sc[0][0], n: sc[0][1] }; }
+  }
+  function qDiff() { var tri = tris.pop(), ans = closest(w, tri), c = tri.filter(function (k) { return ans.indexOf(k) < 0; })[0]; return { t: 'diff', a: ans[0], b: ans[1], c: c, ok: shared(w, ans[0], ans[1]).filter(function (f) { return w.by[c].f.indexOf(f) < 0; }) }; }
+  var allF = w.feats.filter(function (f) { return w.taxa.every(function (t) { return t.f.indexOf(f) >= 0; }); });
+  L.rounds = [allF.length ? { t: 'all', ok: allF } : qCount(), qCount(), qMost(), qDiff(), qMost(), qDiff()];
+  if (L.rounds[4].x === L.rounds[2].x) L.rounds[4] = qCount();
+  L.max = 6;
+  L.draw = function () {
+    var q = L.r, o = { colCls: {}, lab: {}, ticks: {} };
+    function mark(fs_, who) { fs_.forEach(function (f) { o.lab[f] = 'lg'; o.ticks[f] = who; }); }
+    if (q.t === 'count') { setPrompt('<b>How many features do ' + nm(w, q.a) + ' and ' + nm(w, q.b) + ' share?</b> Count the rows where both have a mark.'); o.colCls[q.a] = o.colCls[q.b] = 'foc'; if (q.done) mark(shared(w, q.a, q.b), [q.a, q.b]); }
+    if (q.t === 'most') { setPrompt('<b>Which creature shares the most features with ' + nm(w, q.x) + '?</b> Tap its picture.'); o.cols = !q.done; o.colCls[q.x] = 'foc'; if (q.done) { o.colCls[q.y] = 'good'; if (q.pick !== q.y) o.colCls[q.pick] = 'bad'; mark(shared(w, q.x, q.y), [q.x, q.y]); } }
+    if (q.t === 'diff') { setPrompt('<b>Tap a feature that ' + nm(w, q.a) + ' and ' + nm(w, q.b) + ' share, but ' + nm(w, q.c) + ' does not have.</b>'); o.rows = !q.done; o.colCls[q.a] = o.colCls[q.b] = 'foc'; if (q.done) mark(q.ok, [q.a, q.b]); }
+    if (q.t === 'all') { setPrompt('<b>Tap a feature that all five creatures share.</b>'); o.rows = !q.done; if (q.done) mark(q.ok, w.taxa.map(function (t) { return t.k; })); }
+    if (q.done && (q.t === 'diff' || q.t === 'all') && q.ok.indexOf(q.pick) < 0) o.lab[q.pick] = 'lb';
+    var h = tableHTML(w, o), more = L.i + 1 < L.rounds.length ? 'Next' : 'Finish';
+    if (q.done) {
+      var vb = q.ok_ ? 'Correct.' : 'Not this time.', cl = q.ok_ ? 'good' : 'bad';
+      h += q.min ? '<div class="float dock ' + cl + '"><span class="vb">' + vb + '</span><button type="button" class="btn" data-ov="show">Show answer</button><button type="button" class="btn pri" data-ov="next">' + more + '</button></div>'
+        : '<div class="float pop ' + cl + '" role="dialog" aria-live="polite"><p><b>' + vb + '</b> ' + q.txt + '</p><div class="row"><button type="button" class="btn" data-ov="min">Look at the table</button><button type="button" class="btn pri" data-ov="next">' + more + '</button></div></div>';
+    } else if (q.t === 'count') {
+      if (!q.t0) { q.t0 = performance.now(); setTimeout(function () { q.ready = true; q.open = true; if (L && L.r === q && !q.done) L.draw(); }, 2500); }
+      h += q.open ? '<div class="float pad" role="dialog" aria-label="Choose a number"><p><b>How many features do ' + nm(w, q.a) + ' and ' + nm(w, q.b) + ' share?</b></p><div class="nums">' + [0, 1, 2, 3, 4, 5, 6, 7].map(function (n) { return '<button type="button" class="num pulse" data-num="' + n + '">' + n + '</button>'; }).join('') + '</div><div class="row"><button type="button" class="btn" data-ov="hide">Hide to count again</button></div></div>'
+        : '<div class="float dock"><button type="button" class="btn pri' + (q.ready ? ' pulse' : '') + '" data-ov="open"' + (q.ready ? '' : ' disabled') + '>' + (q.ready ? 'Choose a number' : 'Count first…') + '</button></div>';
+    }
+    $('#stage').innerHTML = h;
+    Array.prototype.forEach.call($('#stage').querySelectorAll('[data-ov],[data-num]'), function (b) {
+      b.addEventListener('click', function () {
+        if (b.dataset.num != null) return answer(+b.dataset.num);
+        var a = b.dataset.ov;
+        if (a === 'next') return nextRound();
+        if (a === 'min') q.min = true; if (a === 'show') q.min = false; if (a === 'hide') q.open = false; if (a === 'open') q.open = true;
+        L.draw();
+      });
+    });
+    var f = $('#stage .pad .num, #stage .pop [data-ov="next"]'); if (f) f.focus({ preventScroll: true });
+  };
+  L.tap = function (key, v) { var q = L.r; if (q.t === 'count') return; if (key === 'col' && v === q.x) return; answer(v); };
+  function answer(v) {
+    var q = L.r, ok, txt; q.pick = v;
+    if (q.t === 'count') { ok = v === q.n; txt = nm(w, q.a) + ' and ' + nm(w, q.b) + ' share ' + q.n + (q.n ? ' (checked): ' + list(shared(w, q.a, q.b).map(fs)) + '.' : '. They have no listed features in common.'); }
+    if (q.t === 'most') { ok = v === q.y; txt = nm(w, q.y) + ' shares ' + q.n + ' features with ' + nm(w, q.x) + ' (checked), more than any other creature here. That makes it the closest relative of ' + nm(w, q.x) + ' in this group.'; }
+    if (q.t === 'diff') { ok = q.ok.indexOf(v) >= 0; txt = nm(w, q.a) + ' and ' + nm(w, q.b) + ' both have ' + list(q.ok.map(fs)).toLowerCase() + ' (checked). ' + nm(w, q.c) + ' does not. Features like these group ' + nm(w, q.a) + ' and ' + nm(w, q.b) + ' together.'; }
+    if (q.t === 'all') { ok = q.ok.indexOf(v) >= 0; txt = 'All five have a ' + fs(q.ok[0]).toLowerCase() + ' (checked). A feature every creature shares comes from their oldest common ancestor.'; }
+    q.ok_ = ok; q.txt = txt; q.done = true; L.pts += ok ? 1 : 0; L.draw();
+  }
+};
+
+/* 3. BUILD: place creatures and feature tags on an empty tree */
+GAME.build = function (L) {
+  var w = L.w, r = L.rng, q = { tips: [null, null, null, null, null], marks: {}, sel: null, checks: 0, bad: {} };
+  var cs = shuffle(w.taxa.map(function (t) { return t.k; }), r), fsh = shuffle(w.marks, r);
+  L.rounds = [q]; L.max = 3;
+  function placedF() { return Object.keys(q.marks).map(function (k) { return q.marks[k]; }).filter(Boolean); }
+  L.draw = function () {
+    setPrompt('<b>Build the tree.</b> Tap a creature or a feature tag, then tap where it goes. Every creature above a tag must have that feature.');
+    var pf = placedF(), tray = cs.filter(function (k) { return q.tips.indexOf(k) < 0; }).map(function (k) { return '<button type="button" class="tk' + (q.sel === 'c:' + k ? ' sel' : '') + '" data-tray="c:' + k + '">' + icon(k) + nm(w, k) + '</button>'; }).join('') +
+      fsh.filter(function (f) { return pf.indexOf(f) < 0; }).map(function (f) { return '<button type="button" class="tk f' + (q.sel === 'f:' + f ? ' sel' : '') + '" data-tray="f:' + f + '">' + fs(f) + '</button>'; }).join('');
+    $('#stage').innerHTML = '<div class="treebox">' + treeSVG(w, { side: 112, build: q, tips: !q.done, markCls: q.bad, tipCls: q.done ? { 0: 'good', 1: 'good', 2: 'good', 3: 'good', 4: 'good' } : {} }) + '</div><div class="side"><div class="tray">' + (tray || '') + '</div>' + (q.done ? '' : '<p>Tap a placed piece to take it back. The Evidence button shows who has which feature.</p>') + '</div>';
+    if (!q.done) setActs([{ t: 'Check tree', cls: 'pri', off: q.tips.indexOf(null) >= 0 || pf.length < w.marks.length, fn: check }]);
+  };
+  L.tap = function (key, v) {
+    q.bad = {};
+    if (key === 'tray') q.sel = q.sel === v ? null : v;
+    if (key === 'tip') { if (q.sel && q.sel[0] === 'c') { q.tips[+v] = q.sel.slice(2); q.sel = null; } else q.tips[+v] = null; }
+    if (key === 'mark') { if (q.sel && q.sel[0] === 'f') { q.marks[v] = q.sel.slice(2); q.sel = null; } else q.marks[v] = null; }
+    setFB(''); L.draw();
+  };
+  function check() {
+    q.checks++; var bad = 0;
+    w.T.nodes.forEach(function (n) {
+      if (!n.mark) return; var f = q.marks[n.id], above = n.idx.map(function (i) { return q.tips[i]; }).sort().join(), want = w.taxa.filter(function (t) { return t.f.indexOf(f) >= 0; }).map(function (t) { return t.k; }).sort().join();
+      if (above !== want) { q.bad[n.id] = 'bad'; bad++; }
+    });
+    if (bad) { setFB('<b>Not yet.</b> ' + bad + (bad === 1 ? ' tag does' : ' tags do') + ' not match (shown in red). Every creature on the branches above a tag must have that feature, and no other creature may have it.', 'bad'); L.draw(); return; }
+    L.starsFixed = q.checks === 1 ? 3 : q.checks === 2 ? 2 : 1; L.summary = 'Tree solved in ' + q.checks + (q.checks === 1 ? ' check.' : ' checks.');
+    Object.keys(q.marks).forEach(function (k) { q.bad[k] = 'good'; });
+    verdict(true, 'Each tag sits below every creature that inherited that feature. Creatures that share the highest branch point are the closest relatives.'); finishRound(3);
+  }
+};
+
+/* 4. READ: answer questions by reading a finished tree */
+GAME.read = function (L) {
+  var w = L.w, r = L.rng, T = w.T, tris = shuffle(triples(w), r), ks = w.taxa.map(function (t) { return t.k; });
+  tris.sort(function (a, b) { return hasTrap(b) - hasTrap(a); });
+  function hasTrap(tri) { return w.traps.some(function (t) { return tri.indexOf(t.p[0]) >= 0 && tri.indexOf(t.p[1]) >= 0; }) ? 1 : 0; }
+  function ti(k) { return T.tips.filter(function (n) { return n.tip === k; })[0].ti; }
+  function qCloser() { var tri = tris.shift(), ans = closest(w, tri), z = tri.filter(function (k) { return ans.indexOf(k) < 0; })[0], sw = r() < 0.5; return { t: 'closer', x: ans[sw ? 0 : 1], y: ans[sw ? 1 : 0], z: z }; }
+  var usedN = {};
+  function qAnc() { var ps = shuffle(ks, r), a, b, n; for (var i = 0; i < 5; i++) for (var j = i + 1; j < 5; j++) { n = mrca(w, ps[i], ps[j]); if (!usedN[n.id] && !a) { a = ps[i]; b = ps[j]; usedN[n.id] = 1; } } if (!a) { a = ps[0]; b = ps[1]; } return { t: 'anc', a: a, b: b, n: mrca(w, a, b).id }; }
+  var mk = shuffle(w.marks.filter(function (f) { return T.root.mark !== f; }), r);
+  function qHas() { var f = mk.pop(), n = T.nodes.filter(function (x) { return x.mark === f; })[0]; return { t: 'has', f: f, want: n.idx.slice().sort().join(), sel: [] }; }
+  L.rounds = [qCloser(), qAnc(), qHas(), qCloser(), qAnc(), qHas()]; L.max = 6;
+  L.draw = function () {
+    var q = L.r, o = { tipCls: {}, nodeCls: {} };
+    if (q.t === 'closer') {
+      setPrompt('<b>Which is the closer relative of the ' + nm(w, q.x) + ': the ' + nm(w, q.y) + ' or the ' + nm(w, q.z) + '?</b> Tap it on the tree.');
+      o.tips = !q.done; o.tipCls[ti(q.x)] = 'foc'; o.tipCls[ti(q.y)] = q.done ? 'good' : 'opt'; o.tipCls[ti(q.z)] = q.done ? (q.pick === q.z ? 'bad' : '') : 'opt';
+    }
+    if (q.t === 'anc') {
+      setPrompt('<b>Tap the branch point where the most recent common ancestor of the ' + nm(w, q.a) + ' and the ' + nm(w, q.b) + ' lived.</b>');
+      o.nodes = true; o.tipCls[ti(q.a)] = o.tipCls[ti(q.b)] = 'foc'; if (q.done) { o.nodeCls[q.n] = 'good'; if (q.pick !== q.n) o.nodeCls[q.pick] = 'bad'; }
+    }
+    if (q.t === 'has') {
+      setPrompt('<b>Tap every creature that inherited the “' + fs(q.f) + '” feature.</b> Then press Check.');
+      o.tips = !q.done; var want = q.want.split(',').map(Number);
+      T.tips.forEach(function (n) { var s = q.sel.indexOf(n.ti) >= 0, wv = want.indexOf(n.ti) >= 0; o.tipCls[n.ti] = q.done ? (wv ? 'good' : s ? 'bad' : '') : s ? 'sel' : ''; });
+      if (!q.done) setActs([{ t: 'Check', cls: 'pri', off: !q.sel.length, fn: function () { var ok = q.sel.slice().sort().join() === q.want; verdict(ok, 'A feature tag marks where the feature first appeared. Every creature on the branches above the tag inherited it: ' + list(want.map(function (i) { return nm(w, T.tips[i].tip); })) + '.'); finishRound(ok ? 1 : 0); } }]);
+    }
+    $('#stage').innerHTML = '<div class="treebox">' + treeSVG(w, o) + '</div>';
+  };
+  L.tap = function (key, v) {
+    var q = L.r;
+    if (q.t === 'closer' && key === 'tip') { var k = T.tips[+v].tip; if (k !== q.y && k !== q.z) return; q.pick = k; verdict(k === q.y, 'Trace down from the ' + nm(w, q.x) + '. Its branch meets the ' + nm(w, q.y) + ' branch before it meets the ' + nm(w, q.z) + ' branch, so they share a more recent common ancestor.'); finishRound(k === q.y ? 1 : 0); }
+    if (q.t === 'anc' && key === 'node') { q.pick = +v; verdict(q.pick === q.n, 'Trace down from each creature. Their branches first meet at the green point. That is where their most recent common ancestor lived.'); finishRound(q.pick === q.n ? 1 : 0); }
+    if (q.t === 'has' && key === 'tip') { var at = q.sel.indexOf(+v); if (at >= 0) q.sel.splice(at, 1); else q.sel.push(+v); L.draw(); }
+  };
+};
+
+/* 5. MYSTERY: place a new creature or fossil on the tree */
+GAME.mystery = function (L) {
+  var w = L.w;
+  L.rounds = w.mystery.map(function (m) { return { m: m, cls: {}, tries: 0 }; }); L.max = 4;
+  L.draw = function () {
+    var q = L.r, m = q.m, cls = {}, k;
+    for (k in q.cls) cls[k] = q.cls[k];
+    if (q.done) w.T.nodes.forEach(function (n) { var id = n.tip ? 't:' + n.tip : 'b:' + n.mark; if (!cls[id]) cls[id] = 'off'; });
+    setPrompt('<b>Where does the ' + m.n + ' join the tree?</b> Tap a <span style="color:var(--accent);font-weight:700">+</span> point. A point below a tag means it branched off before that feature appeared.');
+    $('#stage').innerHTML = '<div class="side"><div class="mcard">' + icon(m.k) + '<h3>' + m.n + (m.fossil ? '<span>Fossil</span>' : '') + '</h3><div class="chips">' +
+      m.has.map(function (f) { return '<span class="chip">' + fs(f) + '</span>'; }).join('') + m.extra.map(function (t) { return '<span class="chip x">' + t + '</span>'; }).join('') + m.lacks.map(function (t) { return '<span class="chip no">' + t + '</span>'; }).join('') +
+      '</div></div></div><div class="treebox">' + treeSVG(w, { side: 124, dots: true, dotCls: cls }) + '</div>';
+  };
+  L.tap = function (key, v) {
+    var q = L.r; if (key !== 'dot' || q.cls[v]) return;
+    q.tries++;
+    if (v === q.m.at) { q.cls[v] = 'good'; verdict(true, q.m.why); return finishRound(q.tries === 1 ? 2 : 1); }
+    q.cls[v] = 'bad';
+    if (q.tries >= 2) { q.cls[q.m.at] = 'good'; verdict(false, q.m.why); return finishRound(0); }
+    setFB('<b>Not there.</b> Compare its features with the creatures on that branch, then try once more.', 'bad'); L.draw();
+  };
+};
+
+var rz; window.addEventListener('resize', function () { clearTimeout(rz); rz = setTimeout(function () { if (L && L.r) L.draw(); }, 120); });
+document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !ov.hidden && $('[data-close]', ov)) hideOv(); });
+window.__ft = { WORLDS: WORLDS, shared: shared, closest: closest, triples: triples, S: S, start: start, home: home, get L() { return L; } };
+home();
+})();
+</script>
+
+</body></html>
